@@ -14,6 +14,10 @@ import datetime
 import DataBase
 
 def set_proff():
+    """Returns: (FirefoxProfile) ff_prof --  firefox preferences
+    Arguments:
+    
+    """
     ff_prof = webdriver.FirefoxProfile()
     #set some privacy settings
     ff_prof.set_preference( "places.history.enabled", False )
@@ -38,30 +42,56 @@ def set_proff():
     return ff_prof
 
 def run_driver(ff_prof):
+    """Returns: (webdriver) driver -- firefox driver
+    Arguments:
+    (FirefoxProfile) ff_prof -- firefox preferences
+    """
     driver = webdriver.Firefox(ff_prof)
     return driver
 
 def open_mail(driver):
+    """Returns: nothing
+    Arguments:
+    (webdriver) driver --  firefox driver
+    """
     driver.get("https://generator.email")
     #make sure fb will accept that mail
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//label[@for="toggler-2"]'))).click()
     
 def open_fb(driver):
+    """Returns: nothing
+    Arguments:
+    (webdriver) driver -- firefox driver
+    """
     #open fb in new window
     driver.execute_script('''window.open("http://www.facebook.com","_blank");''')
     sleep(3)
     driver.switch_to_window(driver.window_handles[1])
 
 def new_mail_address(driver):
+    """Returns: (string) mail_address -- mail address from website
+    Arguments:
+    (webdriver) driver -- firefox driver
+    """
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//button[text()="Generate new e-mail"]'))).click()
     mail_address = driver.find_element_by_id('email_ch_text').text
     return mail_address
 
 def log(log):
+    """Returns: nothing
+    Arguments:
+    (string) log -- text to be logged
+    """
     now = datetime.datetime.now()
     print("[{0}:{1}:{2}] ".format(now.hour,now.minute,now.second))
 
 def register_fb(driver,user,mail_address):
+    """Returns: (Bool)
+    Arguments:
+    (webdriver) driver -- firefox driver
+    (array) user -- row from db
+    (string) mail_address -- mail from website
+    """
     log("Trying to create fb account: {0} {1}, {2}-{3}-{4} ({5} : {6})".format(user[2],user[3],user[4],user[5],user[6],mail_address,user[8]))
     #wait for load inputs
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'firstname')))
@@ -100,12 +130,24 @@ def register_fb(driver,user,mail_address):
     return True
     
 def switch_tab_mail(driver):
+    """Returns: nothing
+    Arguments:
+    (webdriver) driver -- firefox driver
+    """
     driver.switch_to_window(driver.window_handles[0])
 
 def switch_tab_fb(driver):
+    """Returns: nothing
+    Arguments:
+    (webdriver) driver -- firefox driver
+    """
     driver.switch_to_window(driver.window_handles[1])
     
 def get_verification_code(driver):
+    """Returns: (string) verification_code -- code from mail to fb
+    Arguments:
+    (webdriver) driver -- firefox driver
+    """
     #wait for new mail
     WebDriverWait(driver, 10000).until(EC.presence_of_element_located((By.XPATH, '//div[@class="e7m subj_div_45g45gg"]')))
     #get vrc from subcject of mail
@@ -113,6 +155,11 @@ def get_verification_code(driver):
     return verification_code
 
 def verify_fb(driver, verification_code):
+    """Returns: nothing
+    Arguments:
+    (webdriver) driver -- firefox driver
+    (string) verification_code -- code for verification
+    """
     #click on input (robot stuff i guess)
     driver.find_element_by_id("code_in_cliff").click()
     #insert verification code to input
@@ -122,8 +169,11 @@ def verify_fb(driver, verification_code):
     #click 'Okay'
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[4]/div[2]/div/div/div/div[3]/div/a'))).click()
     
-
 def logout_fb(driver):
+    """Returns: nothing
+    Arguments:
+    (webdriver) driver -- firefox driver
+    """
     #wait for and click top right to get list
     WebDriverWait(driver, 100).until(EC.presence_of_element_located((By.ID, 'userNavigationLabel'))).click()
     #wait for 'logout'
@@ -131,30 +181,42 @@ def logout_fb(driver):
     #click 'logout'
     driver.find_elements_by_class_name('_54nh')[9].click()
 
-def delete_mails(driver):
-    WebDriverWait(driver, 100).until(EC.presence_of_element_located((By.CLASS_NAME, 'ptSelectConversation-label')))
-    mails_to_remove = driver.find_elements_by_class_name("ptSelectConversation-label").click()
-    for mail in mails_to_remove:
-        mail.click()
-    WebDriverWait(driver, 100).until(EC.presence_of_element_located((By.CLASS_NAME, 'pm_buttons-child fa fa-trash-o toolbar-btn-trash moveElement-btn-trash')))
-    driver.find_element_by_class_name("pm_buttons-child fa fa-trash-o toolbar-btn-trash moveElement-btn-trash").click()
-
-
 def open_db():
+    """Returns: (Connection) conn -- connection to operate
+    Arguments:
+    """
     conn = sqlite3.connect('project.db', isolation_level=None)
     return conn
 
 def get_users(conn):
+    """Returns:
+    Arguments:
+    (Connection) conn -- connection to get users from db
+    """
     users = conn.execute("SELECT ID,GENDER,FIRSTNAME,LASTNAME,YEAR,MONTH,DAY,EMAIL,PASSWORD from USER")
     return users
 
 def close_db(conn):
+    """Returns:
+    Arguments:
+    (Connection) conn -- connection to close
+    """
     conn.close()
     
 def update_user_mail(conn,user,mail_address):
+    """Returns:
+    Arguments:
+    (Connection) conn -- connection to get users from db
+    (array) user -- row from db
+    (string) mail_address -- mail from website
+    """
     conn.execute("UPDATE USER SET EMAIL=? WHERE ID=?",(mail_address,user[0]))
     
 def create_accounts(driver):
+    """Returns:
+    Arguments:
+    (webdriver) driver -- firefox driver
+    """
     conn = open_db()
     isFbOk = False
     for user in get_users(conn):
